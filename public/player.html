@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Joyphone</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/EaselJS/1.0.2/easeljs.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.js"></script>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="pl.css" />
+  </head>
+
+  <body class="noselect">
+    <h1>Bem vindo ao servidor Joyphone!</h1>
+    <div>
+      <form id="chat">
+        <input
+          id="name"
+          type="text"
+          name="username"
+          placeholder="Digite seu nome de jogador"
+        />
+        <button id="btnSubmit" type="submit" ng-click="ctrl.send()">
+          Enviar
+        </button>
+      </form>
+    </div>
+
+    <div class="container noselect space-top">
+      <h1 class="center blue-text thin">Joystick</h1>
+      <div class="center-align">
+        <canvas id="joystick" height="300" width="300"></canvas>
+      </div>
+      <p id="xVal" class="light">X:</p>
+      <p id="yVal" class="light">Y:</p>
+    </div>
+
+    <script type="text/javascript">
+      var socket = io("https://joyphone.herokuapp.com/");
+
+      $("#chat").submit(function(event) {
+        event.preventDefault();
+
+        var username = $("input[name=username]").val();
+
+        if (username && username.length) {
+          var messageObject = {
+            id: "",
+            name: username
+          };
+
+          socket.emit("start", messageObject);
+        } else {
+          alert("Informe o nome do jogador");
+        }
+      });
+
+      //Joystick
+      init = () => {
+        id = "";
+        name = "";
+
+        socket.on("start", function(data) {
+          id = data.id;
+          name = data.name;
+
+          $("#name").attr("disabled", true);
+          $("#btnSubmit").attr("disabled", true);
+        });
+
+        // easal stuff goes hur
+        var xCenter = 150;
+        var yCenter = 150;
+        var stage = new createjs.Stage("joystick");
+
+        var psp = new createjs.Shape();
+        psp.graphics.beginFill("#333333").drawCircle(xCenter, yCenter, 50);
+
+        psp.alpha = 0.25;
+
+        var vertical = new createjs.Shape();
+        var horizontal = new createjs.Shape();
+        vertical.graphics.beginFill("#ff4d4d").drawRect(150, 0, 2, 300);
+        horizontal.graphics.beginFill("#ff4d4d").drawRect(0, 150, 300, 2);
+
+        stage.addChild(psp);
+        stage.addChild(vertical);
+        stage.addChild(horizontal);
+        createjs.Ticker.framerate = 60;
+        createjs.Ticker.addEventListener("tick", stage);
+        stage.update();
+
+        var myElement = $("#joystick")[0];
+
+        // create a simple instance
+        // by default, it only adds horizontal recognizers
+        var mc = new Hammer(myElement);
+
+        mc.on("panstart", function(ev) {
+          var pos = $("#joystick").position();
+          xCenter = psp.x;
+          yCenter = psp.y;
+          psp.alpha = 0.5;
+
+          stage.update();
+        });
+
+        // listen to events...
+        mc.on("panmove", function(ev) {
+          let data = {};
+          data.id = id;
+          data.name = name;
+
+          var pos = $("#joystick").position();
+
+          var x = ev.center.x - pos.left - 150;
+          var y = ev.center.y - pos.top - 150;
+          $("#xVal").text("X: " + x);
+          $("#yVal").text("Y: " + -1 * y);
+
+          data.x = x;
+          data.y = y;
+
+          var coords = calculateCoords(ev.angle, ev.distance);
+
+          psp.x = coords.x;
+          psp.y = coords.y;
+
+          psp.alpha = 0.5;
+
+          stage.update();
+
+          socket.emit("move", data);
+        });
+
+        mc.on("panend", function(ev) {
+          psp.alpha = 0.25;
+          createjs.Tween.get(psp).to(
+            {
+              x: xCenter,
+              y: yCenter
+            },
+            750,
+            createjs.Ease.elasticOut
+          );
+        });
+      };
+
+      function calculateCoords(angle, distance) {
+        var coords = {};
+        distance = Math.min(distance, 100);
+        var rads = (angle * Math.PI) / 180.0;
+
+        coords.x = distance * Math.cos(rads);
+        coords.y = distance * Math.sin(rads);
+
+        return coords;
+      }
+
+      init();
+    </script>
+  </body>
+</html>

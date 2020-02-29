@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<style>
+    #container {
+        width: 800px;
+        height: 600px;
+        position: relative;
+        background: yellow;
+    }
+</style>
+
+<body>
+    <div id="container">
+
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+    <script>
+        //https://www.w3schools.com/js/tryit.asp?filename=tryjs_dom_animate_3
+        const socket = io('https://joyphone.herokuapp.com');
+        const cache = [];
+        let joysticks = [];
+
+        socket.on('start', function (data) {
+            const {
+                id,
+                name
+            } = data;
+            start(
+                id,
+                name
+            );
+        });
+
+        socket.on('move', (data) => {
+            let posTop = 0;
+            let posLeft = 0;
+            const incr = 10;
+
+            const joys = joysticks.filter(x => x.id === data.id);
+
+            if (joys && joys.length > 0) {
+                posTop = joys[0].top;
+                posLeft = joys[0].left;
+            }
+
+
+            if (data.value === 'top') {
+                posTop = posTop - incr;
+            }
+
+            if (data.value === 'left') {
+                posLeft = posLeft - incr;
+            }
+
+            if (data.value === 'right') {
+                posLeft = posLeft + incr;
+            }
+
+            if (data.value === 'down') {
+                posTop = posTop + incr;
+            }
+
+            if (posLeft < 0) {
+                posLeft = 0;
+            }
+
+            if (posTop < 0) {
+                posTop = 0;
+            }
+
+            if (posLeft >= 700) {
+                posLeft = 700;
+            }
+
+            if (posTop >= 540) {
+                posTop = 540;
+            }
+
+            let index = -1;
+
+            for (let i = 0; i < joysticks.length; i++) {
+                if (joysticks[i].id === data.id) {
+                    index = i;
+                    break;
+                }
+            }
+
+            if (index >= 0) {
+                joysticks.splice(index, 1);
+            }
+
+            joysticks.push({
+                id: data.id,
+                top: posTop,
+                left: posLeft
+            });
+
+            let elem = document.getElementById(data.id);
+            elem.style.top = posTop + "px";
+            elem.style.left = posLeft + "px";
+        });
+
+        start = (
+            id,
+            name
+        ) => {
+            const playerId = cache.filter(x => x.id === id);
+            if (name && id && playerId.length === 0) {
+
+                colors = [
+                    '#000000',
+                    '#6A5ACD',
+                    '#0000CD',
+                    '#6495ED',
+                    '#00BFFF',
+                    '#2F4F4F',
+                    '#ADFF2F',
+                    '#DAA520',
+                    '#D2691E',
+                    '#F5DEB3',
+                    '#FF00FF',
+                    '#DC143C'
+                ];
+                const index = Math.floor(Math.random() * 10);
+                this.color = colors[index];
+
+                const player =
+                    `<div id="${id}" style="width: 60px;height: 60px;position: absolute;background-color: ${color};padding-top: 5px;padding-left: 5px;"><span id="namePlayer" style="color:white;">${name}</span></div>`;
+                $("#container").append(player);
+                cache.push({
+                    id
+                });
+            }
+        }
+    </script>
+
+</body>
+
+</html>

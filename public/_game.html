@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joyphone</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <h1>Bem vindo ao Joyphone!</h1>
+    <div class="tela">
+        <div>
+            <canvas id="canvas1" width="500" height="200">
+                Se você visualizar esse texto, seu browser não suporta a tag canvas.
+            </canvas>
+        </div>
+
+        <div>
+            <canvas id="canvas2" width="500" height="200">
+                Se você visualizar esse texto, seu browser não suporta a tag canvas.
+            </canvas>
+        </div>
+
+
+        <div>
+            <canvas id="canvas3" width="500" height="200">
+                Se você visualizar esse texto, seu browser não suporta a tag canvas.
+            </canvas>
+        </div>
+
+    </div>
+    <script type="text/javascript">
+        let datas = [];
+
+        var socket = io('http://localhost:3000/');
+        var WIDTH = 800;
+        var HEIGHT = 800;
+
+        socket.on('start', function (data) {
+            const {
+                id,
+                name
+            } = data;
+            init(
+                id,
+                name
+            );
+        });
+
+        socket.on('move', function (data) {
+            const values = datas.filter(x => x.id === data.id);
+
+            if (values && values.length > 0) {
+                const value = values[0];
+                clean(value.ctx);
+                toDraw(data.x, data.y, value.ctx, value.color);
+                //toDraw(value.ctx, value.x, value.y, value.color);
+            }
+        });
+
+        init = (id, name) => {
+            const s = datas.some(x => x.id === id);
+            if (!datas.some(x => x.id === id) && datas.length <= 3) {
+
+                colors = [
+                    '#000000',
+                    '#6A5ACD',
+                    '#0000CD',
+                    '#6495ED',
+                    '#00BFFF',
+                    '#2F4F4F',
+                    '#ADFF2F',
+                    '#DAA520',
+                    '#D2691E',
+                    '#F5DEB3',
+                    '#FF00FF',
+                    '#DC143C',
+                    '#FFD700'
+                ];
+
+                const index = Math.floor(Math.random() * 11);
+
+                this.color = colors[index];
+
+                // $('.tela').append(
+                //   ` <canvas id="${id}" width="${WIDTH}" height="${HEIGHT}">Browser não suporta a tag canvas.</canvas>`
+                ///  );
+
+                const canvas = document.getElementById(`canvas${datas.length + 1}`);
+                const context = canvas.getContext("2d");
+
+                datas.push({
+                    id,
+                    name,
+                    color: color,
+                    ctx: context
+                });
+
+                toDraw(250, 100, context, color);
+            }
+        }
+
+        toDraw = (x, y, ctx, color) => {
+            ctx.beginPath();
+            ctx.arc(x, y, 20, 20, Math.PI * 2, true);
+            ctx.fillStyle = color;
+            // ctx.fillRect(x, y, 150, 100);
+            ctx.fill();
+        }
+
+        color = () => {
+            colors = [
+                '#000000',
+                '#6A5ACD',
+                '#0000CD',
+                '#6495ED',
+                '#00BFFF',
+                '#2F4F4F',
+                '#ADFF2F',
+                '#DAA520',
+                '#D2691E',
+                '#F5DEB3',
+                '#FF00FF',
+                '#DC143C',
+                '#FFD700'
+            ];
+
+            const index = Math.floor(Math.random() * 11);
+
+            return colors[index];
+        }
+
+        clean = (ctx) => {
+            ctx.fillStyle = "white";
+            ctx.strokeStyle = "black";
+            ctx.beginPath();
+            ctx.rect(0, 0, WIDTH, HEIGHT);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        /*var socket = io('http://localhost:3000');
+
+        function renderMessage(message) {
+            $('.messages').append('<div class="message"><strong>' + message.author + '</strong>:' + message.message +
+                ' </div>');
+        }
+
+        socket.on('previousMessages', function (messages) {
+            for (message of messages) {
+                renderMessage(message);
+            }
+        });
+
+        socket.on('receiveMessage', function (message) {
+            renderMessage(message);
+        });
+
+        $('#chat').submit(function (event) {
+            event.preventDefault();
+
+            var author = $('input[name=username]').val();
+            var message = $('input[name=message]').val();
+
+            if (author.length && message.length) {
+                var messageObject = {
+                    author: author,
+                    message: message,
+                };
+
+                renderMessage(messageObject);
+
+                socket.emit('connected', messageObject);
+            }
+        });*/
+    </script>
+</body>
+
+</html>
